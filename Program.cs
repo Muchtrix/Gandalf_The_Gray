@@ -9,7 +9,8 @@ namespace Gandalf
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var helper = new ParityGameHelper();
+            Console.WriteLine(helper.SolveGame());
         }
 
         public static Game Select(this (Game, Game) obj, int selector) {
@@ -28,7 +29,8 @@ namespace Gandalf
         public int SolveGame() {
             var parameters = ParseLine();
             Nodes = new (int, int)[parameters[0] + parameters[1]];
-            Nodes.Initialize();
+            Edges = new List<int>[parameters[0] + parameters[1]];
+            for (int i = 0; i < Edges.Length; ++i) Edges[i] = new List<int>();
             for(int i = 0; i < parameters[0]; ++i) {
                 var line = ParseLine();
                 Nodes[line[0]] = (line[1], 0);
@@ -42,19 +44,23 @@ namespace Gandalf
                 Edges[line[0]].Add(line[1]);
             }
             int initialVertex = ParseLine()[0];
+            return Solve(Enumerable.Range(0, Nodes.Length).ToHashSet()).Item1.Contains(initialVertex) ? 1 : 0;
         }
 
         private (Game, Game) Solve(Game g) {
-            int p = Nodes.Where((_, i) => g.Contains(i)).Max(x => x.Color);
-            if (p == 0) {
-                return (g, EmptyGame);
+            if (!g.Any()) {
+                return (EmptyGame, EmptyGame);
             }
-            var u = Nodes.Where((v, i) => g.Contains(i) && v.Color == p).Select((_, i) => i).ToHashSet();
+            int p = Nodes.Where((_, i) => g.Contains(i)).Max(x => x.Color);
+            var u = new Game();
+            for (int idx = 0; idx < Nodes.Length; ++idx) {
+                if (g.Contains(idx) && Nodes[idx].Color == p) u.Add(idx);
+            }
             int player = p % 2;
             var a = Attractor(g, u, player);
             var res = Solve(g.Except(a).ToHashSet());
-            if (res.Select(player).SetEquals(g)) {
-                return (player == 0)? (g, EmptyGame) : (EmptyGame, g);
+            if (!res.Select(1 - player).Any()) {
+                return (player == 0)? (a.Union(res.Item1).ToHashSet(), EmptyGame) : (EmptyGame, a.Union(res.Item2).ToHashSet());
             }
             var b = Attractor(g, res.Select(1 - player), 1 - player);
             var res2 = Solve(g.Except(b).ToHashSet());
@@ -63,7 +69,21 @@ namespace Gandalf
         }
 
         private Game Attractor(Game g, Game v, int player) {
-            throw new NotImplementedException();
+            Game res = new Game(v);
+            bool wasAdded;
+            do {
+                wasAdded = false;
+                foreach(int node in g.Except(res)) {
+                    if (Nodes[node].Player == 0 && Edges[node].Any(x => res.Contains(x))) {
+                        wasAdded = true;
+                        res.Add(node);
+                    } else if (Nodes[node].Player == 1 && Edges[node].All(x => res.Contains(x))) {
+                        wasAdded = true;
+                        res.Add(node);
+                    }
+                }
+            } while (wasAdded);
+            return res;
         }
     }
 }
