@@ -8,4 +8,4 @@ Assignment specification is availible in `specification.pdf`
 
 ## Instructions
 0. Get .Net Core SDK from https://www.microsoft.com/net/download/
-1. Just user provided makefile with `build`, `run` and `clean` commands
+1. Just use provided makefile with `build`, `run` and `clean` commands
