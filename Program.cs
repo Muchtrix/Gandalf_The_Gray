@@ -67,15 +67,12 @@ namespace Gandalf
             bool wasAdded;
             do {
                 wasAdded = false;
-                foreach(int node in g.Except(res)) {
-                    if (Nodes[node].Player == player && Edges[node].Any(x => res.Contains(x))) {
-                        wasAdded = true;
-                        res.Add(node);
-                    } else if ((Nodes[node].Player == 1 - player) && Edges[node].All(x => res.Contains(x))) {
-                        wasAdded = true;
-                        res.Add(node);
-                    }
-                }
+                int oldCount = res.Count;
+                res.UnionWith(g.Except(res).Where(node => 
+                    (Nodes[node].Player == player && Edges[node].Any(res.Contains)) 
+                    || ((Nodes[node].Player == 1 - player) && Edges[node].Where(g.Contains).All(res.Contains))
+                ));
+                wasAdded = oldCount < res.Count;
             } while (wasAdded);
             return res;
         }
